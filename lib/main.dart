@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wegostudy/page/login_page.dart';
 import 'package:wegostudy/page/start_page.dart';
 
 void main() {
@@ -18,6 +19,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const StartPage(),
+      initialRoute: '/',
+      routes: {
+        '/login': (context) => LoginPage(),
+      },
     );
   }
 }
