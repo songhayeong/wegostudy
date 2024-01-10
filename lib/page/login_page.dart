@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:wegostudy/components/define_color.dart';
+import 'package:wegostudy/model/token.dart';
+import 'package:wegostudy/mvvm/token_view_model.dart';
+import 'package:wegostudy/service/api_client.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -11,8 +15,35 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool isChecked = false;
 
+  final TextEditingController idController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  final ApiClient _apiClient = ApiClient();
+
+  bool _showPassword = false;
+
+
   @override
   Widget build(BuildContext context) {
+
+    TokenViewModel tokenViewModel = Provider.of<TokenViewModel>(context, listen:false);
+
+    Future<void> login() async {
+      dynamic res = await _apiClient.login(
+        idController.text,
+        passwordController.text,
+      );
+      print(res);
+
+      if (res['isSuccess'] == true) {
+        tokenViewModel.updateAccessToken(res['data']['accessToken']);
+        tokenViewModel.updateRefreshToken(res['data']['refreshToken']);
+        Navigator.pushNamed(context, '/login_success');
+      } else {
+        print(res);
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(),
       body: Column(
@@ -36,11 +67,11 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: textField("아이디"),
+            child: idTextFormField(),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: textField("비밀번호"),
+            child: passwordTextFormField(),
           ),
           Row(
             children: [
@@ -66,20 +97,23 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Container(
-              width: 500,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Color(DefineColor.loginBtnColor),
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: const Center(
-                child: Text(
-                  "로그인",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+            child: GestureDetector(
+              onTap: login,
+              child: Container(
+                width: 500,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Color(DefineColor.loginBtnColor),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Center(
+                  child: Text(
+                    "로그인",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -91,21 +125,22 @@ class _LoginPageState extends State<LoginPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                  "새로운 계정이 필요하신가요?",
+              const Text("새로운 계정이 필요하신가요?",
                   style: TextStyle(
                     fontSize: 14,
                     //fontWeight: FontWeight.wSymbol(figma.mixed),
-                  )
-              ),
-              Text(
-                  "회원가입",
-                  style: TextStyle(
-                    color: Color(DefineColor.loginBtnColor),
-                    fontSize: 14,
-                    decoration: TextDecoration.underline,
-                    decorationColor: Color(DefineColor.loginBtnColor),
-                  )
+                  )),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/register');
+                },
+                child: Text("회원가입",
+                    style: TextStyle(
+                      color: Color(DefineColor.loginBtnColor),
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(DefineColor.loginBtnColor),
+                    )),
               ),
             ],
           )
@@ -114,23 +149,37 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget textField(String name) {
-    return Container(
-      width: 500,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(15),
+  Widget idTextFormField() {
+    return TextFormField(
+      controller: idController,
+      decoration: InputDecoration(
+        hintText: "id",
+        isDense: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16),
-        child: Text(
-          name,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.withOpacity(0.6),
+    );
+  }
+
+  Widget passwordTextFormField() {
+    return TextFormField(
+      obscureText: _showPassword,
+      controller: passwordController,
+      decoration: InputDecoration(
+        isDense: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        suffixIcon: GestureDetector(
+          onTap: () {
+            setState(() {
+              () => _showPassword = !_showPassword;
+            });
+          },
+          child: Icon(
+            _showPassword ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey,
           ),
         ),
       ),
